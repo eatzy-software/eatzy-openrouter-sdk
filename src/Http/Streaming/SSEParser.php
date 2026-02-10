@@ -44,6 +44,12 @@ class SSEParser
                     }
 
                     $jsonData = json_decode($data, true);
+                    if ($jsonData === null && json_last_error() !== JSON_ERROR_NONE) {
+                        // Handle JSON parsing error
+                        throw new \OpenRouterSDK\Exceptions\ValidationException(
+                            'Failed to parse JSON in SSE stream: ' . json_last_error_msg()
+                        );
+                    }
                     if ($jsonData) {
                         $onChunk($jsonData);
                     }
@@ -56,6 +62,12 @@ class SSEParser
             $data = trim($matches[1]);
             if ($data !== '[DONE]') {
                 $jsonData = json_decode($data, true);
+                if ($jsonData === null && json_last_error() !== JSON_ERROR_NONE) {
+                    // Handle JSON parsing error
+                    throw new \OpenRouterSDK\Exceptions\ValidationException(
+                        'Failed to parse JSON in SSE stream buffer: ' . json_last_error_msg()
+                    );
+                }
                 if ($jsonData) {
                     $onChunk($jsonData);
                 }

@@ -9,10 +9,10 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'api_key' => env('OPENROUTER_API_KEY'),
+    'api_key' => env('OPENROUTER_API_KEY', ''),
     'base_url' => env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
     'timeout' => env('OPENROUTER_TIMEOUT', 30),
-    'default_model' => env('OPENROUTER_DEFAULT_MODEL'),
+    'default_model' => env('OPENROUTER_DEFAULT_MODEL', ''),
 
     /*
     |--------------------------------------------------------------------------

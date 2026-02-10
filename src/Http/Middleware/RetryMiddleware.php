@@ -6,6 +6,7 @@ namespace OpenRouterSDK\Http\Middleware;
 
 use GuzzleHttp\Exception\RequestException;
 use OpenRouterSDK\Exceptions\MaxRetriesExceededException;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Retry middleware for handling failed requests
@@ -37,9 +38,17 @@ class RetryMiddleware
             } catch (\Exception $e) {
                 $attempt++;
 
-                // Don't retry on client errors (4xx)
-                if ($this->isClientError($e)) {
+                // Don't retry on client errors (4xx) except rate limiting
+                if ($this->isClientError($e) && !$this->isRateLimited($e)) {
                     throw $e;
+                }
+
+                // Handle rate limiting with specific delay
+                if ($this->isRateLimited($e)) {
+                    $delaySeconds = $this->getRateLimitDelay($e);
+                    if ($delaySeconds > 0) {
+                        sleep($delaySeconds);
+                    }
                 }
 
                 // Don't retry if we've exhausted attempts
@@ -73,5 +82,52 @@ class RetryMiddleware
         }
 
         return false;
+    }
+
+    /**
+     * Check if exception represents rate limiting (429)
+     */
+    private function isRateLimited(\Exception $exception): bool
+    {
+        if ($exception instanceof RequestException && $exception->getResponse()) {
+            $statusCode = $exception->getResponse()->getStatusCode();
+            return $statusCode === 429;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get delay time from rate limit headers
+     */
+    private function getRateLimitDelay(\Exception $exception): int
+    {
+        if (!($exception instanceof RequestException) || !$exception->getResponse()) {
+            return 1; // Default 1 second delay
+        }
+
+        $response = $exception->getResponse();
+        
+        // Check for Retry-After header (can be seconds or HTTP date)
+        if ($response->hasHeader('Retry-After')) {
+            $retryAfter = $response->getHeaderLine('Retry-After');
+            if (is_numeric($retryAfter)) {
+                return (int) $retryAfter;
+            }
+            // If it's a date, calculate difference
+            $retryTime = strtotime($retryAfter);
+            if ($retryTime !== false) {
+                return max(1, $retryTime - time());
+            }
+        }
+
+        // Check for X-RateLimit-Reset header
+        if ($response->hasHeader('X-RateLimit-Reset')) {
+            $resetTime = (int) $response->getHeaderLine('X-RateLimit-Reset');
+            return max(1, $resetTime - time());
+        }
+
+        // Default fallback
+        return 1;
     }
 }

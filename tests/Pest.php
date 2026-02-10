@@ -39,6 +39,15 @@ expect()->extend('toBeOne', function () {
     return $this->toBe(1);
 });
 
+expect()->extend('toHaveLengthGreaterThan', function (int $length) {
+    return strlen($this->value) > $length;
+});
+
+expect()->extend('toBeJson', function () {
+    json_decode($this->value);
+    return json_last_error() === JSON_ERROR_NONE;
+});
+
 /*
 |--------------------------------------------------------------------------
 | Functions
@@ -50,7 +59,51 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+// Performance profiling helper
+function profile(callable $callback, string $name = 'anonymous')
 {
-    // ..
+    $startTime = microtime(true);
+    $startMemory = memory_get_usage(true);
+    
+    $result = $callback();
+    
+    $endTime = microtime(true);
+    $endMemory = memory_get_usage(true);
+    
+    $executionTime = ($endTime - $startTime) * 1000; // ms
+    $memoryUsed = ($endMemory - $startMemory) / 1024 / 1024; // MB
+    
+    // Store profiling data
+    static $profiles = [];
+    $profiles[$name] = [
+        'time_ms' => round($executionTime, 2),
+        'memory_mb' => round($memoryUsed, 2),
+        'timestamp' => date('Y-m-d H:i:s')
+    ];
+    
+    // Optionally save to file
+    if (getenv('SAVE_PROFILE_DATA')) {
+        file_put_contents(
+            __DIR__ . '/profile_data.json',
+            json_encode($profiles, JSON_PRETTY_PRINT)
+        );
+    }
+    
+    return $result;
+}
+
+// Test grouping helpers
+function integrationTest(callable $test)
+{
+    return test('Integration Test', $test)->group('integration');
+}
+
+function performanceTest(callable $test)
+{
+    return test('Performance Test', $test)->group('performance');
+}
+
+function edgeCaseTest(callable $test)
+{
+    return test('Edge Case Test', $test)->group('edge-case');
 }

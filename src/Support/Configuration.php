@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OpenRouterSDK\Support;
 
 use OpenRouterSDK\Contracts\ConfigurationInterface;
+use OpenRouterSDK\Exceptions\ValidationException;
 
 /**
  * Configuration implementation for OpenRouter SDK
@@ -20,7 +21,11 @@ class Configuration implements ConfigurationInterface
      */
     public function __construct(array $config = [])
     {
-        $this->config = array_merge($this->getDefaultConfig(), $config);
+        // Sanitize and validate configuration
+        $sanitizedConfig = ConfigurationValidator::sanitize($config);
+        ConfigurationValidator::validate($sanitizedConfig);
+        
+        $this->config = array_merge($this->getDefaultConfig(), $sanitizedConfig);
     }
 
     /**
