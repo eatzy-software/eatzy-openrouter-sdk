@@ -185,7 +185,7 @@ it('benchmarks streaming performance', function () {
         model: 'benchmark/model'
     );
 
-    $this->chatService->createStream($request, function ($chunk) use (&$capturedContent, &$chunkCount) {
+    $this->chatService->stream($request, function ($chunk) use (&$capturedContent, &$chunkCount) {
         $chunkCount++;
         if (isset($chunk['choices'][0]['delta']['content'])) {
             $capturedContent .= $chunk['choices'][0]['delta']['content'];

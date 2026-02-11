@@ -219,7 +219,7 @@ it('handles concurrent streaming requests', function () {
             model: 'edgecase/model'
         );
 
-        $this->chatService->createStream($request, function ($chunk) use (&$capturedContent) {
+        $this->chatService->stream($request, function ($chunk) use (&$capturedContent) {
             if (isset($chunk['choices'][0]['delta']['content'])) {
                 $capturedContent .= $chunk['choices'][0]['delta']['content'];
             }

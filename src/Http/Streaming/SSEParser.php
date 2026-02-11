@@ -4,78 +4,127 @@ declare(strict_types=1);
 
 namespace OpenRouterSDK\Http\Streaming;
 
+use OpenRouterSDK\Exceptions\ValidationException;
 use Psr\Http\Message\StreamInterface;
 
 /**
  * Server-Sent Events parser for streaming responses
+ * 
+ * Implements SSE specification compliant parsing:
+ * - Reads stream line-by-line until blank line (event boundary)
+ * - Combines multiple data: lines within single event
+ * - Properly handles [DONE] marker and usage chunks
+ * - Ignores SSE comments (lines starting with :)
+ * - Tolerant of malformed JSON without breaking stream
+ * - Handles mid-stream errors per OpenRouter specification
  */
 class SSEParser
 {
     /**
-     * Parse SSE stream and call callbacks for each chunk
+     * Parse raw SSE stream according to SSE specification
+     *
+     * @param StreamInterface $stream PSR-7 stream to parse
+     * @param callable $onChunk Callback for each parsed chunk
+     * @param callable|null $onComplete Callback when stream completes
+     * @throws ValidationException When stream errors occur
      */
     public function parseStream(
         StreamInterface $stream,
         callable $onChunk,
         ?callable $onComplete = null
     ): void {
-        $buffer = '';
-
+        $eventBuffer = '';
+        
         while (!$stream->eof()) {
-            $buffer .= $stream->read(1024);
-
-            while (($pos = strpos($buffer, "\n\n")) !== false) {
-                $chunk = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 2);
-
-                if (trim($chunk) === '') {
-                    continue;
-                }
-
-                // Parse SSE format: data: {"key": "value"}
-                if (preg_match('/^data:\s*(.+)$/m', $chunk, $matches)) {
-                    $data = trim($matches[1]);
-
-                    if ($data === '[DONE]') {
-                        if ($onComplete) {
-                            $onComplete();
-                        }
-                        return;
-                    }
-
-                    $jsonData = json_decode($data, true);
-                    if ($jsonData === null && json_last_error() !== JSON_ERROR_NONE) {
-                        // Handle JSON parsing error
-                        throw new \OpenRouterSDK\Exceptions\ValidationException(
-                            'Failed to parse JSON in SSE stream: ' . json_last_error_msg()
-                        );
-                    }
-                    if ($jsonData) {
-                        $onChunk($jsonData);
-                    }
-                }
+            $line = $stream->read(1);
+            
+            // Append raw byte
+            $eventBuffer .= $line;
+            
+            // Detect end of event (two newlines)
+            if (str_ends_with($eventBuffer, "\n\n") || str_ends_with($eventBuffer, "\r\n\r\n")) {
+                $this->handleEvent(trim($eventBuffer), $onChunk, $onComplete);
+                $eventBuffer = '';
             }
         }
-
-        // Handle any remaining data in buffer
-        if (!empty($buffer) && preg_match('/^data:\s*(.+)$/m', $buffer, $matches)) {
-            $data = trim($matches[1]);
-            if ($data !== '[DONE]') {
-                $jsonData = json_decode($data, true);
-                if ($jsonData === null && json_last_error() !== JSON_ERROR_NONE) {
-                    // Handle JSON parsing error
-                    throw new \OpenRouterSDK\Exceptions\ValidationException(
-                        'Failed to parse JSON in SSE stream buffer: ' . json_last_error_msg()
-                    );
-                }
-                if ($jsonData) {
-                    $onChunk($jsonData);
-                }
-            }
+        
+        // Remaining event
+        if (trim($eventBuffer) !== '') {
+            $this->handleEvent(trim($eventBuffer), $onChunk, $onComplete);
         }
-
+        
+        // Signal completion if not already called
         if ($onComplete) {
-            $onComplete();
+            ($onComplete)();
         }
+    }
+    
+    /**
+     * Handle individual SSE event according to specification
+     */
+    private function handleEvent(string $event, callable $onChunk, ?callable $onComplete): void
+    {
+        // Handle empty events
+        if ($event === '') {
+            return;
+        }
+
+        // Ignore SSE comments per spec
+        if (str_starts_with($event, ':')) {
+            return;
+        }
+        
+        // Gather all 'data:' lines
+        $dataLines = [];
+        foreach (explode("\n", $event) as $line) {
+            $line = trim($line);
+            if (str_starts_with($line, 'data:')) {
+                $data = substr($line, 5); // after "data:"
+                $dataLines[] = trim($data);
+            }
+        }
+        
+        if (empty($dataLines)) {
+            return;
+        }
+        
+        // If this is the done marker
+        if (count($dataLines) === 1 && $dataLines[0] === '[DONE]') {
+            if ($onComplete) {
+                ($onComplete)();
+            }
+            return;
+        }
+        
+        // Combine multi data lines
+        $combinedJson = implode('', $dataLines);
+        
+        // Attempt JSON parse
+        try {
+            $parsed = json_decode($combinedJson, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            // Ignore incomplete / non JSON event
+            return;
+        }
+        
+        // Handle usage chunks (final chunks with usage stats)
+        if (isset($parsed['usage'])) {
+            ($onChunk)($parsed);
+            return;
+        }
+        
+        // Mid-stream error handling per OpenRouter spec
+        if (isset($parsed['error'])) {
+            $errorMessage = $parsed['error']['message'] ?? 'Unknown stream error';
+            throw new ValidationException(sprintf('Stream error: %s', $errorMessage));
+        }
+        
+        if (isset($parsed['choices'][0]['finish_reason']) &&
+            $parsed['choices'][0]['finish_reason'] === 'error') {
+            throw new ValidationException('Stream terminated due to error');
+        }
+        
+        // Process normal content chunks
+        ($onChunk)($parsed);
     }
 }
