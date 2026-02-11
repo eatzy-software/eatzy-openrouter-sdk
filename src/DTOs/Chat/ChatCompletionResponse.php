@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace OpenRouterSDK\Models\Chat;
+namespace OpenRouterSDK\DTOs\Chat;
 
 use OpenRouterSDK\Support\DataTransferObject;
 
 /**
- * Chat completion response model
+ * Chat completion response DTO
  */
 class ChatCompletionResponse extends DataTransferObject
 {
@@ -17,7 +17,7 @@ class ChatCompletionResponse extends DataTransferObject
     public readonly string $model;
     /** @var ChatChoice[] */
     public readonly array $choices;
-    public ?\OpenRouterSDK\Models\Chat\ChatUsage $usage = null;
+    public ?ChatUsage $usage = null;
     public ?array $system_fingerprint = null;
 
     /**
@@ -29,7 +29,7 @@ class ChatCompletionResponse extends DataTransferObject
         int $created,
         string $model,
         array $choices,
-        ?\OpenRouterSDK\Models\Chat\ChatUsage $usage = null,
+        ?ChatUsage $usage = null,
         ?array $system_fingerprint = null
     ) {
         parent::__construct([
@@ -59,8 +59,31 @@ class ChatCompletionResponse extends DataTransferObject
     /**
      * Get usage statistics
      */
-    public function getUsage(): ?\OpenRouterSDK\Models\Chat\ChatUsage
+    public function getUsage(): ?ChatUsage
     {
         return $this->usage;
+    }
+
+    /**
+     * Map raw API response data to ChatCompletionResponse instance
+     */
+    public static function map(array $data): static
+    {
+        $choices = array_map(
+            fn(array $choiceData) => ChatChoice::map($choiceData),
+            $data['choices'] ?? []
+        );
+
+        $usage = isset($data['usage']) ? ChatUsage::map($data['usage']) : null;
+
+        return new static(
+            $data['id'],
+            $data['object'],
+            $data['created'],
+            $data['model'],
+            $choices,
+            $usage,
+            $data['system_fingerprint'] ?? null
+        );
     }
 }

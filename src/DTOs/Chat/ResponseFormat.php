@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OpenRouterSDK\Models\Chat;
+namespace OpenRouterSDK\DTOs\Chat;
 
 use OpenRouterSDK\Support\DataTransferObject;
 
@@ -60,5 +60,16 @@ class ResponseFormat extends DataTransferObject
     public static function jsonSchema(array $schema): self
     {
         return new self(self::TYPE_JSON_SCHEMA, $schema);
+    }
+
+    /**
+     * Map raw API response data to ResponseFormat instance
+     */
+    public static function map(array $data): static
+    {
+        return new static(
+            $data['type'],
+            $data['json_schema'] ?? null
+        );
     }
 }

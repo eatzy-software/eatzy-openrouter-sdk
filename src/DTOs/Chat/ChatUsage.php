@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace OpenRouterSDK\Models\Chat;
+namespace OpenRouterSDK\DTOs\Chat;
 
 use OpenRouterSDK\Support\DataTransferObject;
 
 /**
- * Chat completion usage statistics
+ * Chat completion usage statistics DTO
  */
 class ChatUsage extends DataTransferObject
 {
@@ -28,5 +28,17 @@ class ChatUsage extends DataTransferObject
             'completion_tokens' => $completion_tokens,
             'total_tokens' => $total_tokens,
         ]);
+    }
+
+    /**
+     * Map raw API response data to ChatUsage instance
+     */
+    public static function map(array $data): static
+    {
+        return new static(
+            $data['prompt_tokens'],
+            $data['completion_tokens'],
+            $data['total_tokens']
+        );
     }
 }

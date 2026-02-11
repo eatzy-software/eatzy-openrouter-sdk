@@ -7,8 +7,8 @@ namespace OpenRouterSDK\Support;
 use OpenRouterSDK\Exceptions\ValidationException;
 
 /**
- * Base Data Transfer Object class for all API models
- * Provides automatic property assignment and validation
+ * Base Data Transfer Object class for all API DTOs
+ * Provides automatic property assignment, validation, and mapping capabilities
  */
 abstract class DataTransferObject
 {
@@ -99,5 +99,19 @@ abstract class DataTransferObject
         if ($actualType !== $expectedType && !($expectedType === 'array' && is_array($value))) {
             throw new ValidationException("Property '{$propertyName}' must be of type {$expectedType}, got {$actualType}");
         }
+    }
+
+    /**
+     * Map raw API response data to DTO instance
+     * Must be implemented by concrete DTO classes
+     */
+    abstract public static function map(array $data): static;
+
+    /**
+     * Map array of raw data to array of DTO instances
+     */
+    public static function mapCollection(array $dataArray): array
+    {
+        return array_map([static::class, 'map'], $dataArray);
     }
 }

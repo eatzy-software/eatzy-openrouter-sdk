@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace OpenRouterSDK\Models\Chat;
+namespace OpenRouterSDK\DTOs\Chat;
 
 use OpenRouterSDK\Support\DataTransferObject;
 
 /**
- * Chat completion request model matching OpenRouter API schema exactly
+ * Chat completion request DTO matching OpenRouter API schema exactly
  */
 class ChatCompletionRequest extends DataTransferObject
 {
@@ -99,7 +99,7 @@ class ChatCompletionRequest extends DataTransferObject
         $this->assertNotEmpty($this->messages, 'messages');
 
         foreach ($this->messages as $message) {
-            if (!$message instanceof \OpenRouterSDK\Models\Chat\ChatMessage) {
+            if (!$message instanceof ChatMessage) {
                 throw new \InvalidArgumentException('All messages must be ChatMessage instances');
             }
         }
@@ -171,5 +171,43 @@ class ChatCompletionRequest extends DataTransferObject
         $data = $this->toArray();
         $data['max_tokens'] = $maxTokens;
         return self::fromArray($data);
+    }
+
+    /**
+     * Map raw API response data to ChatCompletionRequest instance
+     */
+    public static function map(array $data): static
+    {
+        $messages = array_map(
+            fn(array $messageData) => ChatMessage::map($messageData),
+            $data['messages'] ?? []
+        );
+
+        $responseFormat = null;
+        if (isset($data['response_format'])) {
+            $responseFormat = is_array($data['response_format']) 
+                ? ResponseFormat::map($data['response_format'])
+                : $data['response_format'];
+        }
+
+        return new static(
+            $messages,
+            $data['model'] ?? null,
+            $responseFormat,
+            $data['stream'] ?? false,
+            $data['tools'] ?? null,
+            $data['tool_choice'] ?? null,
+            $data['max_tokens'] ?? null,
+            $data['temperature'] ?? null,
+            $data['top_p'] ?? null,
+            $data['top_k'] ?? null,
+            $data['frequency_penalty'] ?? null,
+            $data['presence_penalty'] ?? null,
+            $data['repetition_penalty'] ?? null,
+            $data['stop'] ?? null,
+            $data['logit_bias'] ?? null,
+            $data['seed'] ?? null,
+            $data['user'] ?? null
+        );
     }
 }
