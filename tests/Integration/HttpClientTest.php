@@ -70,8 +70,7 @@ it('handles HTTP errors with proper exception wrapping', function () {
     $mockResponses = [
         new RequestException(
             'Internal Server Error',
-            new Request('POST', 'https://api.example.com/test'),
-            new Response(500, [], json_encode(['error' => 'Server error']))
+            new Request('POST', 'https://api.example.com/test')
         ),
     ];
     
@@ -105,6 +104,7 @@ it('includes proper headers in requests', function () {
 
     // Assert
     expect($capturedRequest)->not()->toBeNull();
+    /** @var Request $capturedRequest */
     expect($capturedRequest->getHeaderLine('Authorization'))->toBe('Bearer test-api-key');
     expect($capturedRequest->getHeaderLine('Content-Type'))->toBe('application/json');
     expect($capturedRequest->getHeaderLine('HTTP-Referer'))->toBe('https://example.com');
@@ -208,8 +208,8 @@ it('streams Server-Sent Events correctly', function () {
 
     // Assert
     expect($chunksReceived)->toHaveCount(2);
-    expect($chunksReceived[0])->toEqual(['choices' => [['delta' => ['content' => 'Hello']]]);
-    expect($chunksReceived[1])->toEqual(['choices' => [['delta' => ['content' => ' World']]]);
+    expect($chunksReceived[0])->toEqual(['choices' => [['delta' => ['content' => 'Hello']]]]);
+    expect($chunksReceived[1])->toEqual(['choices' => [['delta' => ['content' => ' World']]]]);
 });
 
 it('handles streaming errors', function () {
@@ -217,7 +217,7 @@ it('handles streaming errors', function () {
     $mockResponses = [
         new RequestException(
             'Connection failed',
-            new Request('POST', 'https://api.example.com/stream')
+            new Request('POST', 'https://api.example.com/stream'),
         ),
     ];
     

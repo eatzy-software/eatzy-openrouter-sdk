@@ -5,9 +5,9 @@ declare(strict_types=1);
 use OpenRouterSDK\Services\ChatService;
 use OpenRouterSDK\Support\Configuration;
 use OpenRouterSDK\Http\Client\GuzzleHttpClient;
-use OpenRouterSDK\Models\Chat\ChatMessage;
-use OpenRouterSDK\Models\Chat\ChatCompletionRequest;
-use OpenRouterSDK\Models\Chat\ResponseFormat;
+use OpenRouterSDK\DTOs\Chat\ChatMessage;
+use OpenRouterSDK\DTOs\Chat\ChatCompletionRequest;
+use OpenRouterSDK\DTOs\Chat\ResponseFormat;
 use OpenRouterSDK\Exceptions\HttpException;
 use OpenRouterSDK\Exceptions\ValidationException;
 use GuzzleHttp\Client;
@@ -88,7 +88,7 @@ it('handles streaming response with mock data', function () {
         model: 'test/model'
     );
 
-    $this->chatService->createStream($request, function ($chunk) use (&$capturedContent) {
+    $this->chatService->stream($request, function ($chunk) use (&$capturedContent) {
         if (isset($chunk['choices'][0]['delta']['content'])) {
             $capturedContent .= $chunk['choices'][0]['delta']['content'];
         }

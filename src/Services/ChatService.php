@@ -7,11 +7,9 @@ namespace OpenRouterSDK\Services;
 use OpenRouterSDK\Contracts\ChatServiceInterface;
 use OpenRouterSDK\Contracts\HttpClientInterface;
 use OpenRouterSDK\Contracts\ConfigurationInterface;
-use OpenRouterSDK\Models\Chat\ChatCompletionRequest;
-use OpenRouterSDK\Models\Chat\ChatCompletionResponse;
-use OpenRouterSDK\Models\Chat\ChatMessage;
-use OpenRouterSDK\Models\Chat\ChatChoice;
-use OpenRouterSDK\Models\Chat\ChatUsage;
+use OpenRouterSDK\DTOs\Chat\ChatCompletionRequest;
+use OpenRouterSDK\DTOs\Chat\ChatCompletionResponse;
+use OpenRouterSDK\DTOs\Chat\ChatMessage;
 
 /**
  * Chat service implementation for OpenRouter API
@@ -49,7 +47,7 @@ class ChatService implements ChatServiceInterface
             'json' => $data,
         ]);
 
-        return $this->transformResponse($response);
+        return ChatCompletionResponse::map($response);
     }
 
     /**
@@ -77,46 +75,4 @@ class ChatService implements ChatServiceInterface
         return $response->getContent();
     }
 
-    /**
-     * Transform API response to ChatCompletionResponse object
-     */
-    private function transformResponse(array $data): ChatCompletionResponse
-    {
-        $choices = array_map(function (array $choiceData) {
-            $messageData = $choiceData['message'];
-            $message = new ChatMessage(
-                $messageData['role'],
-                $messageData['content'],
-                $messageData['name'] ?? null,
-                $messageData['tool_call_id'] ?? null
-            );
-
-            return new ChatChoice(
-                $choiceData['index'],
-                $message,
-                $choiceData['finish_reason'] ?? null,
-                $choiceData['logprobs'] ?? null
-            );
-        }, $data['choices']);
-
-        $usage = null;
-        if (isset($data['usage'])) {
-            $usageData = $data['usage'];
-            $usage = new ChatUsage(
-                $usageData['prompt_tokens'],
-                $usageData['completion_tokens'],
-                $usageData['total_tokens']
-            );
-        }
-
-        return new ChatCompletionResponse(
-            $data['id'],
-            $data['object'],
-            $data['created'],
-            $data['model'],
-            $choices,
-            $usage,
-            $data['system_fingerprint'] ?? null
-        );
-    }
 }

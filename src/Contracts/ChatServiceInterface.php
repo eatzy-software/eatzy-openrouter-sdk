@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace OpenRouterSDK\Contracts;
 
-use OpenRouterSDK\Models\Chat\ChatCompletionRequest;
-use OpenRouterSDK\Models\Chat\ChatCompletionResponse;
+use OpenRouterSDK\DTOs\Chat\ChatCompletionRequest;
+use OpenRouterSDK\DTOs\Chat\ChatCompletionResponse;
 
 /**
  * Chat Service Interface for chat completion functionality

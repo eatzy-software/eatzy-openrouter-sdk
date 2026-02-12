@@ -5,8 +5,8 @@ use Illuminate\Foundation\Application;
 use Mockery as m;
 use OpenRouterSDK\Laravel\Facade\OpenRouter;
 use OpenRouterSDK\Laravel\ServiceProvider\OpenRouterServiceProvider;
-use OpenRouterSDK\Models\Chat\ChatCompletionRequest;
-use OpenRouterSDK\Models\Chat\ChatMessage;
+use OpenRouterSDK\DTOs\Chat\ChatCompletionRequest;
+use OpenRouterSDK\DTOs\Chat\ChatMessage;
 
 // Mock Laravel application for testing
 class MockApplication

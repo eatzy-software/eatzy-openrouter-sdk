@@ -11,9 +11,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/vendor/autoload.php';
 
 use OpenRouterSDK\Services\ChatService;
-use OpenRouterSDK\Models\Chat\ChatCompletionRequest;
-use OpenRouterSDK\Models\Chat\ChatMessage;
-use OpenRouterSDK\Models\Chat\ResponseFormat;
+use OpenRouterSDK\DTOs\Chat\ChatCompletionRequest;
+use OpenRouterSDK\DTOs\Chat\ChatMessage;
+use OpenRouterSDK\DTOs\Chat\ResponseFormat;
 use OpenRouterSDK\Support\Configuration;
 // use GuzzleHttp\ClientInterface;
 // use OpenRouterSDK\Http\Client\GuzzleHttpClient;

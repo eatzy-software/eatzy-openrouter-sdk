@@ -159,29 +159,6 @@ try {
     ], 503);
 }
 
-// Batch processing example
-function processBatchQueries($queries) {
-    $results = collect();
-    
-    foreach ($queries as $query) {
-        try {
-            $response = OpenRouter::simpleChat($query);
-            $results->push([
-                'query' => $query,
-                'response' => $response,
-                'status' => 'success'
-            ]);
-        } catch (Exception $e) {
-            $results->push([
-                'query' => $query,
-                'error' => $e->getMessage(),
-                'status' => 'failed'
-            ]);
-        }
-    }
-    
-    return $results;
-}
 
 // Queue job example
 use Illuminate\Bus\Queueable;

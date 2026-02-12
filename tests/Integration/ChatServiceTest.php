@@ -8,9 +8,9 @@ use Mockery as m;
 use OpenRouterSDK\Contracts\ConfigurationInterface;
 use OpenRouterSDK\Contracts\HttpClientInterface;
 use OpenRouterSDK\Http\Client\GuzzleHttpClient;
-use OpenRouterSDK\Models\Chat\ChatCompletionRequest;
-use OpenRouterSDK\Models\Chat\ChatMessage;
-use OpenRouterSDK\Models\Chat\ResponseFormat;
+use OpenRouterSDK\DTOs\Chat\ChatCompletionRequest;
+use OpenRouterSDK\DTOs\Chat\ChatMessage;
+use OpenRouterSDK\DTOs\Chat\ResponseFormat;
 use OpenRouterSDK\Services\ChatService;
 use OpenRouterSDK\Support\Configuration;
 

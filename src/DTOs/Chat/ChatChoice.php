@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace OpenRouterSDK\Models\Chat;
+namespace OpenRouterSDK\DTOs\Chat;
 
 use OpenRouterSDK\Support\DataTransferObject;
 
 /**
- * Chat completion choice model
+ * Chat completion choice DTO
  */
 class ChatChoice extends DataTransferObject
 {
     public readonly int $index;
-    public readonly \OpenRouterSDK\Models\Chat\ChatMessage $message;
+    public readonly ChatMessage $message;
     public ?string $finish_reason = null;
     public ?array $logprobs = null;
 
@@ -21,7 +21,7 @@ class ChatChoice extends DataTransferObject
      */
     public function __construct(
         int $index,
-        \OpenRouterSDK\Models\Chat\ChatMessage $message,
+        ChatMessage $message,
         ?string $finish_reason = null,
         ?array $logprobs = null
     ) {
@@ -31,5 +31,20 @@ class ChatChoice extends DataTransferObject
             'finish_reason' => $finish_reason,
             'logprobs' => $logprobs,
         ]);
+    }
+
+    /**
+     * Map raw API response data to ChatChoice instance
+     */
+    public static function map(array $data): static
+    {
+        $message = ChatMessage::map($data['message']);
+
+        return new static(
+            $data['index'],
+            $message,
+            $data['finish_reason'] ?? null,
+            $data['logprobs'] ?? null
+        );
     }
 }

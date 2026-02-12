@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace OpenRouterSDK\Models\Chat;
+namespace OpenRouterSDK\DTOs\Chat;
 
 use OpenRouterSDK\Support\DataTransferObject;
 
 /**
- * Chat message model matching OpenRouter API schema exactly
+ * Chat message DTO matching OpenRouter API schema exactly
  */
 class ChatMessage extends DataTransferObject
 {
@@ -88,5 +88,18 @@ class ChatMessage extends DataTransferObject
     public static function tool(string $content, string $tool_call_id, ?string $name = null): self
     {
         return new self(self::ROLE_TOOL, $content, $name, $tool_call_id);
+    }
+
+    /**
+     * Map raw API response data to ChatMessage instance
+     */
+    public static function map(array $data): static
+    {
+        return new static(
+            $data['role'],
+            $data['content'],
+            $data['name'] ?? null,
+            $data['tool_call_id'] ?? null
+        );
     }
 }
