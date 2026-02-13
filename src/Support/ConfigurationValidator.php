@@ -27,7 +27,7 @@ class ConfigurationValidator
         $errors = [];
 
         // Validate API key
-        if (!isset($config['api_key'])) {
+        if (empty($config['api_key'])) {
             $errors['api_key'] = 'API key is required';
         } elseif (!self::isValidApiKey($config['api_key'])) {
             $errors['api_key'] = 'Invalid API key format. Expected: sk-or-... or sk-...';
@@ -93,9 +93,10 @@ class ConfigurationValidator
         $errors = [];
 
         // Validate API key
-        if (empty($config->getApiKey())) {
+        $apiKey = $config->getApiKey();
+        if (empty($apiKey)) {
             $errors['api_key'] = 'API key is required';
-        } elseif (!self::isValidApiKey($config->getApiKey())) {
+        } elseif (!self::isValidApiKey($apiKey)) {
             $errors['api_key'] = 'Invalid API key format';
         }
 
