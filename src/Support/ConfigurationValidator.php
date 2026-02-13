@@ -77,7 +77,8 @@ class ConfigurationValidator
         }
 
         if (!empty($errors)) {
-            throw new ValidationException('Configuration validation failed', $errors);
+            $errorMessage = self::buildDetailedErrorMessage($errors);
+            throw new ValidationException($errorMessage, $errors, 'Configuration validation');
         }
     }
 
@@ -118,7 +119,8 @@ class ConfigurationValidator
         }
 
         if (!empty($errors)) {
-            throw new ValidationException('Configuration validation failed', $errors);
+            $errorMessage = self::buildDetailedErrorMessage($errors);
+            throw new ValidationException($errorMessage, $errors, 'Configuration validation');
         }
     }
 
@@ -131,7 +133,8 @@ class ConfigurationValidator
     public static function isValidApiKey(string $apiKey): bool
     {
         // OpenRouter API keys typically start with 'sk-or-' or 'sk-'
-        return preg_match('/^sk-(or-)?[a-zA-Z0-9]{32,}$/', $apiKey) === 1;
+        // Updated regex to support hyphens within the key portion
+        return preg_match('/^sk-(or-)?[a-zA-Z0-9\-]{32,}$/', $apiKey) === 1;
     }
 
     /**
@@ -178,6 +181,36 @@ class ConfigurationValidator
         }
 
         return $sanitized;
+    }
+
+    /**
+     * Build detailed error message from validation errors
+     *
+     * @param array $errors Validation errors array
+     * @return string Detailed error message
+     */
+    private static function buildDetailedErrorMessage(array $errors): string
+    {
+        $message = "Configuration validation failed with " . count($errors) . " error(s):\n";
+        
+        foreach ($errors as $field => $error) {
+            $message .= "- {$field}: {$error}\n";
+        }
+        
+        // Add common troubleshooting tips
+        if (isset($errors['api_key'])) {
+            $message .= "\n💡 Tip: Make sure OPENROUTER_API_KEY is set in your .env file";
+        }
+        
+        if (isset($errors['base_url'])) {
+            $message .= "\n💡 Tip: Base URL should be a valid URL like 'https://openrouter.ai/api/v1'";
+        }
+        
+        if (isset($errors['timeout'])) {
+            $message .= "\n💡 Tip: Timeout should be between 1-300 seconds";
+        }
+        
+        return trim($message);
     }
 
     /**
