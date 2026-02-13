@@ -1,4 +1,4 @@
-test# OpenRouter PHP SDK
+# OpenRouter PHP SDK
 
 Production-ready, framework-agnostic PHP SDK for OpenRouter API with Laravel integration.
 
