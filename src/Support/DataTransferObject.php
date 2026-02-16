@@ -26,7 +26,59 @@ abstract class DataTransferObject
      */
     public function toArray(): array
     {
-        return get_object_vars($this);
+        $vars = get_object_vars($this);
+        $result = [];
+        
+        foreach ($vars as $key => $value) {
+            // Skip private/protected properties (those starting with \0)
+            if (str_starts_with($key, "\0")) {
+                continue;
+            }
+            
+            // Only include properties that have been set and are not null
+            // For arrays, include them if they're not empty
+            if ($value !== null) {
+                if (is_array($value)) {
+                    // For arrays, include them if they're not empty
+                    if (!empty($value)) {
+                        $result[$key] = $this->processArrayValue($value);
+                    }
+                } else {
+                    $result[$key] = $value;
+                }
+            }
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Process array values to handle nested DTOs and remove null values
+     */
+    private function processArrayValue(array $array): array
+    {
+        $result = [];
+        foreach ($array as $key => $item) {
+            if ($item === null) {
+                continue; // Skip null values
+            }
+            if ($item instanceof DataTransferObject) {
+                $processed = $item->toArray();
+                // Only add if the processed DTO is not empty
+                if (!empty($processed)) {
+                    $result[$key] = $processed;
+                }
+            } elseif (is_array($item)) {
+                $processed = $this->processArrayValue($item);
+                // Only add if the processed array is not empty
+                if (!empty($processed)) {
+                    $result[$key] = $processed;
+                }
+            } else {
+                $result[$key] = $item;
+            }
+        }
+        return $result;
     }
 
     /**

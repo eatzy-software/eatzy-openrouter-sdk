@@ -64,17 +64,12 @@ class GuzzleHttpClient implements HttpClientInterface
         callable $onChunk,
         ?callable $onComplete = null
     ): void {
-        $options = [
-            'body' => json_encode($body),
-            'headers' => array_merge(
-                $this->config->getDefaultHeaders(),
-                ['Accept' => 'text/event-stream']
-            ),
-            'stream' => true,
-        ];
-
+        $options = $this->prepareOptions(['json' => $body]);
+        $options['headers']['Accept'] = 'text/event-stream';
+        $options['stream'] = true;
+    
         try {
-            $response = $this->client->post($uri, $options);
+            $response = $this->client->request('POST', $uri, $options);
             $parser = new SSEParser();
             $parser->parseStream($response->getBody(), $onChunk, $onComplete);
         } catch (RequestException $e) {
@@ -94,10 +89,33 @@ class GuzzleHttpClient implements HttpClientInterface
     {
         $defaults = [
             'timeout' => $this->config->getTimeout(),
-            'headers' => $this->config->getDefaultHeaders(),
         ];
 
-        return array_merge_recursive($defaults, $options);
+        // Handle headers separately to avoid conflicts with json/body options
+        $defaultHeaders = $this->config->getDefaultHeaders();
+        
+        if (isset($options['json']) || isset($options['body'])) {
+            // If json or body is provided, merge headers carefully
+            
+            // If json option is provided, ensure proper Content-Type
+            if (isset($options['json'])) {
+                $defaultHeaders['Content-Type'] = 'application/json';
+            }
+            
+            // Merge headers properly - prioritize options headers over defaults
+            if (isset($options['headers'])) {
+                $mergedHeaders = array_merge($defaultHeaders, $options['headers']);
+                $options['headers'] = $mergedHeaders;
+            } else {
+                $options['headers'] = $defaultHeaders;
+            }
+            
+            return array_merge($defaults, $options);
+        } else {
+            // For non-body requests, merge headers normally
+            $defaults['headers'] = $defaultHeaders;
+            return array_merge_recursive($defaults, $options);
+        }
     }
 
     /**

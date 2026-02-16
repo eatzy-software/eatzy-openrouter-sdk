@@ -57,12 +57,17 @@ class Configuration implements ConfigurationInterface
      */
     public function getDefaultHeaders(): array
     {
-        return array_filter([
+        $headers = [
             'Authorization' => 'Bearer ' . $this->getApiKey(),
             'Content-Type' => 'application/json',
             'HTTP-Referer' => $this->config['headers']['HTTP-Referer'] ?? '',
             'X-Title' => $this->config['headers']['X-Title'] ?? '',
-        ]);
+        ];
+        
+        // Filter out empty values but keep the authorization header
+        return array_filter($headers, function($value, $key) {
+            return $key === 'Authorization' || !empty($value);
+        }, ARRAY_FILTER_USE_BOTH);
     }
 
     /**
@@ -89,7 +94,7 @@ class Configuration implements ConfigurationInterface
         return [
             'api_key' => '',
             'base_url' => 'https://openrouter.ai/api/v1',
-            'timeout' => 30,
+            'timeout' => 90,
             'default_model' => null,
             'headers' => [
                 'HTTP-Referer' => '',
