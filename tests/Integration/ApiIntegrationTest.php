@@ -14,6 +14,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use OpenRouterSDK\DTOs\Chat\ChatCompletionResponse;
 
 beforeEach(function () {
     // Create mock handler for testing
@@ -63,11 +64,11 @@ it('handles successful chat completion with mock response', function () {
 
     $response = $this->chatService->create($request);
 
-    expect($response)->toBeInstanceOf(\Eatzy\OpenRouter\Models\Chat\ChatCompletionResponse::class);
-    expect($response->getId())->toBe('chatcmpl-test123');
-    expect($response->getModel())->toBe('test/model');
+    expect($response)->toBeInstanceOf(ChatCompletionResponse::class);
+    expect($response->id)->toBe('chatcmpl-test123');
+    expect($response->model)->toBe('test/model');
     expect($response->getContent())->toBe('Hello! How can I help you today?');
-    expect($response->getUsage()['total_tokens'])->toBe(18);
+    expect($response->getUsage()->total_tokens)->toBe(18);
 });
 
 it('handles streaming response with mock data', function () {

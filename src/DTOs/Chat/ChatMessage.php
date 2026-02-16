@@ -20,6 +20,9 @@ class ChatMessage extends DataTransferObject
     public readonly string|array $content;
     public ?string $name = null;
     public ?string $tool_call_id = null;
+    public ?string $refusal = null;
+    public ?string $reasoning = null;
+    public ?array $reasoning_details = null;
 
     /**
      * Create chat message
@@ -33,13 +36,19 @@ class ChatMessage extends DataTransferObject
         string $role,
         string|array $content,
         ?string $name = null,
-        ?string $tool_call_id = null
+        ?string $tool_call_id = null,
+        ?string $refusal = null,
+        ?string $reasoning = null,
+        ?array $reasoning_details = null
     ) {
         parent::__construct([
             'role' => $role,
             'content' => $content,
             'name' => $name,
             'tool_call_id' => $tool_call_id,
+            'refusal' => $refusal,
+            'reasoning' => $reasoning,
+            'reasoning_details' => $reasoning_details,
         ]);
     }
 
@@ -99,7 +108,10 @@ class ChatMessage extends DataTransferObject
             $data['role'],
             $data['content'],
             $data['name'] ?? null,
-            $data['tool_call_id'] ?? null
+            $data['tool_call_id'] ?? null,
+            $data['refusal'] ?? null,
+            $data['reasoning'] ?? null,
+            $data['reasoning_details'] ?? null
         );
     }
 }
