@@ -15,6 +15,7 @@ class ChatCompletionResponse extends DataTransferObject
     public readonly string $object;
     public readonly int $created;
     public readonly string $model;
+    public readonly string $provider;
     /** @var ChatChoice[] */
     public readonly array $choices;
     public ?ChatUsage $usage = null;
@@ -28,6 +29,7 @@ class ChatCompletionResponse extends DataTransferObject
         string $object,
         int $created,
         string $model,
+        string $provider,
         array $choices,
         ?ChatUsage $usage = null,
         ?array $system_fingerprint = null
@@ -37,6 +39,7 @@ class ChatCompletionResponse extends DataTransferObject
             'object' => $object,
             'created' => $created,
             'model' => $model,
+            'provider' => $provider,
             'choices' => $choices,
             'usage' => $usage,
             'system_fingerprint' => $system_fingerprint,
@@ -53,7 +56,7 @@ class ChatCompletionResponse extends DataTransferObject
         }
 
         $message = $this->choices[0]->message;
-        return is_string($message->content) ? $message->content : '';
+        return is_string($message->content) ? trim($message->content) : '';
     }
 
     /**
@@ -81,6 +84,7 @@ class ChatCompletionResponse extends DataTransferObject
             $data['object'],
             $data['created'],
             $data['model'],
+            $data['provider'] ?? 'unknown',
             $choices,
             $usage,
             $data['system_fingerprint'] ?? null

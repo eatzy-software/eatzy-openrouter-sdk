@@ -15,6 +15,7 @@ class ChatChoice extends DataTransferObject
     public readonly ChatMessage $message;
     public ?string $finish_reason = null;
     public ?array $logprobs = null;
+    public ?string $native_finish_reason = null;
 
     /**
      * Create chat choice
@@ -23,13 +24,15 @@ class ChatChoice extends DataTransferObject
         int $index,
         ChatMessage $message,
         ?string $finish_reason = null,
-        ?array $logprobs = null
+        ?array $logprobs = null,
+        ?string $native_finish_reason = null
     ) {
         parent::__construct([
             'index' => $index,
             'message' => $message,
             'finish_reason' => $finish_reason,
             'logprobs' => $logprobs,
+            'native_finish_reason' => $native_finish_reason,
         ]);
     }
 
@@ -44,7 +47,8 @@ class ChatChoice extends DataTransferObject
             $data['index'],
             $message,
             $data['finish_reason'] ?? null,
-            $data['logprobs'] ?? null
+            $data['logprobs'] ?? null,
+            $data['native_finish_reason'] ?? null
         );
     }
 }
