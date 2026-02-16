@@ -31,15 +31,17 @@ class RetryMiddleware
     public function handle(callable $handler, string $method, string $uri, array $options = []): array
     {
         $attempt = 0;
+        $lastException = null;
 
         while ($attempt < $this->maxAttempts) {
             try {
                 return $handler($method, $uri, $options);
             } catch (\Exception $e) {
                 $attempt++;
+                $lastException = $e;
 
-                // Don't retry on client errors (4xx) except rate limiting
-                if ($this->isClientError($e) && !$this->isRateLimited($e)) {
+                // Determine if this error is retryable
+                if (!$this->isRetryableError($e)) {
                     throw $e;
                 }
 
@@ -51,37 +53,68 @@ class RetryMiddleware
                     }
                 }
 
-                // Don't retry if we've exhausted attempts
+                // If we've exhausted attempts, throw the final exception
                 if ($attempt >= $this->maxAttempts) {
+                    $errorMessage = "Max retries ({$this->maxAttempts}) exceeded. Last error: " . $e->getMessage();
                     throw new MaxRetriesExceededException(
                         $this->maxAttempts,
-                        "Max retries ({$this->maxAttempts}) exceeded",
+                        $errorMessage,
                         0,
                         $e
                     );
                 }
 
-                // Exponential backoff
-                $delay = $this->backoffMs * pow(2, $attempt - 1);
+                // Exponential backoff with jitter
+                $delay = $this->calculateBackoff($attempt);
                 usleep($delay * 1000);
             }
+        }
+
+        // This should never be reached due to the loop condition, but included for safety
+        if ($lastException) {
+            throw new MaxRetriesExceededException(
+                $this->maxAttempts,
+                "Max retries ({$this->maxAttempts}) exceeded after exhausting all attempts",
+                0,
+                $lastException
+            );
         }
 
         throw new MaxRetriesExceededException($this->maxAttempts);
     }
 
     /**
-     * Check if exception represents a client error (4xx)
+     * Determine if an error is retryable
+     * Only retry on network errors, server errors (5xx), and rate limiting (429)
      */
-    private function isClientError(\Exception $exception): bool
+    private function isRetryableError(\Exception $exception): bool
     {
+        // Always retry network errors and connection issues
+        if ($exception instanceof \GuzzleHttp\Exception\ConnectException ||
+            $exception instanceof \GuzzleHttp\Exception\TransferException) {
+            return true;
+        }
+
         // Check if it's a RequestException with response
         if ($exception instanceof RequestException && $exception->getResponse()) {
             $statusCode = $exception->getResponse()->getStatusCode();
-            return $statusCode >= 400 && $statusCode < 500;
+            
+            // Retry on server errors (5xx)
+            if ($statusCode >= 500) {
+                return true;
+            }
+            
+            // Retry on rate limiting (429)
+            if ($statusCode === 429) {
+                return true;
+            }
+            
+            // Don't retry on client errors (4xx) except 429
+            return false;
         }
 
-        return false;
+        // If no response, likely a network or connection issue - retry
+        return true;
     }
 
     /**
@@ -95,6 +128,21 @@ class RetryMiddleware
         }
 
         return false;
+    }
+
+    /**
+     * Calculate exponential backoff with jitter
+     */
+    private function calculateBackoff(int $attempt): int
+    {
+        // Exponential backoff: base_delay * 2^(attempt-1)
+        $baseDelay = $this->backoffMs;
+        $exponentialDelay = $baseDelay * pow(2, $attempt - 1);
+        
+        // Add jitter to prevent thundering herd
+        $jitter = rand(0, $baseDelay);
+        
+        return (int) ($exponentialDelay + $jitter);
     }
 
     /**
