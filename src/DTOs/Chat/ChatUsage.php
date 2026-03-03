@@ -14,7 +14,7 @@ class ChatUsage extends DataTransferObject
     public readonly int $prompt_tokens;
     public readonly int $completion_tokens;
     public readonly int $total_tokens;
-    public readonly int $cost;
+    public readonly float $cost;
     public readonly bool $is_byok;
     public ?array $prompt_tokens_details = null;
     public ?array $cost_details = null;
@@ -27,7 +27,7 @@ class ChatUsage extends DataTransferObject
         int $prompt_tokens,
         int $completion_tokens,
         int $total_tokens,
-        int $cost,
+        float $cost,
         bool $is_byok,
         ?array $prompt_tokens_details = null,
         ?array $cost_details = null,
